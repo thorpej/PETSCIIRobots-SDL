@@ -6,6 +6,11 @@ CXXFLAGS += `pkg-config --cflags SDL2_image`
 LDFLAGS += `pkg-config --libs sdl2`
 LDFLAGS += `pkg-config --libs SDL2_image`
 
+# Uncomment and modify this line if you want to define a directory there
+# game assets will be loaded from if they're not found in the current working
+# directory.
+CXXFLAGS += -DPLATFORM_ASSETS_DIRECTORY=\"/opt/share/petrobots\"
+
 SOURCES := petrobots.cpp Platform.cpp PlatformSDL.cpp PT2.3A_replay_cia.cpp
 OBJECTS := $(SOURCES:.cpp=.o)
 TARGET := petrobots

@@ -142,6 +142,31 @@ static uint16_t joystickButtons[] = {
     0 // 16
 };
 
+static const char *
+platform_asset_path(const char *filename)
+{
+#ifdef PLATFORM_ASSETS_DIRECTORY
+    static char asset_path[1024]; // XXX magic number
+    snprintf(asset_path, sizeof(asset_path), "%s/%s",
+             PLATFORM_ASSETS_DIRECTORY, filename);
+    return asset_path;
+#else
+    return filename;
+#endif
+}
+
+static SDL_Surface *
+platform_load_surface(const char *filename)
+{
+    SDL_Surface *surface;
+
+    surface = IMG_Load(filename);
+    if (surface == NULL) {
+        surface = IMG_Load(platform_asset_path(filename));
+    }
+    return surface;
+}
+
 PlatformSDL::PlatformSDL() :
     interrupt(0),
     audioSpec({0}),
@@ -232,12 +257,12 @@ PlatformSDL::PlatformSDL() :
     bufferSurface = SDL_CreateRGBSurface(0, PLATFORM_SCREEN_WIDTH, PLATFORM_SCREEN_HEIGHT, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
     fadeSurface = SDL_CreateRGBSurface(0, 1, 1, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
 #ifdef PLATFORM_COLOR_SUPPORT
-    fontSurface = IMG_Load("c64font.png");
+    fontSurface = platform_load_surface("c64font.png");
 #else
-    fontSurface = IMG_Load("petfont.png");
+    fontSurface = platform_load_surface("petfont.png");
 #endif
 #ifdef PLATFORM_IMAGE_BASED_TILES
-    tileSurface = IMG_Load("tilesalpha.png");
+    tileSurface = platform_load_surface("tilesalpha.png");
 #else
     for (int i = 0; i < 256; i++) {
         tileSurfaces[i] = SDL_CreateRGBSurface(0, 24, 24, 32, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000);
@@ -245,15 +270,15 @@ PlatformSDL::PlatformSDL() :
 #endif
 #ifdef PLATFORM_IMAGE_SUPPORT
     for (int i = 0; i < 3; i++) {
-        imageSurfaces[i] = IMG_Load(imageFilenames[i]);
+        imageSurfaces[i] = platform_load_surface(imageFilenames[i]);
     }
-    itemsSurface = IMG_Load("items.png");
-    keysSurface = IMG_Load("keys.png");
-    healthSurface = IMG_Load("health.png");
-    facesSurface = IMG_Load("faces.png");
-    animTilesSurface = IMG_Load("animtiles.png");
+    itemsSurface = platform_load_surface("items.png");
+    keysSurface = platform_load_surface("keys.png");
+    healthSurface = platform_load_surface("health.png");
+    facesSurface = platform_load_surface("faces.png");
+    animTilesSurface = platform_load_surface("animtiles.png");
 #ifdef PLATFORM_SPRITE_SUPPORT
-    spritesSurface = IMG_Load("spritesalpha.png");
+    spritesSurface = platform_load_surface("spritesalpha.png");
     SDL_SetColorKey(spritesSurface, SDL_TRUE, 16);
 #endif
 #endif
@@ -585,6 +610,9 @@ uint32_t PlatformSDL::load(const char* filename, uint8_t* destination, uint32_t 
     uint32_t bytesRead = 0;
 
     FILE* file = fopen(filename, "r");
+    if (file == NULL) {
+        file = fopen(platform_asset_path(filename), "r");
+    }
     if (file) {
         bytesRead = (uint32_t)fread(destination, 1, size, file);
 
